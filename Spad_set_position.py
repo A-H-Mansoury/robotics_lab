@@ -167,7 +167,7 @@ class Spad:
 
 if __name__ == '__main__':
     sp = Spad()
-    angls = [0 0 0 0]
+    angls = [0, 0, 0, 0]
     bts = sp.angle2bit(angls)
     sp.set_position(bts)
     sp.print_position()
