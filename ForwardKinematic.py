@@ -1,4 +1,5 @@
 import numpy as np
+from Spad import Spad
 
 def generate_H(theta, d, a, alpha):
     s = np.sin
@@ -11,12 +12,8 @@ def generate_H(theta, d, a, alpha):
     ]
     return np.array(tmp)
 
-def H_all(t1,t2,t3,t4):
-    d1 = 180
-    a1 = 50
-    a2 = 120
-    a3 = 120
-    a4 = 150
+def H_all(t1,t2,t3,t4, ROBOT_CONFIG):
+    d1, a1, a2, a3, a4 = ROBOT_CONFIG.copy()
     dh = [
         [0, 0, -a1, 0],
         [t1, d1, 0, np.pi/2],
@@ -31,11 +28,43 @@ def H_all(t1,t2,t3,t4):
         H = np.matmul(H, tmp)
     return H
 
-H = H_all(np.pi/4, 0, 0, 0)
+def forward_kinematic(q, ROBOT_CONFIG):
+    """
+    purpose: calculate forward kinematics
+    input: a 4*1 vector of radian angles
+    output: a 3*1 vector of x y z position in millimeters 
+    sample input: np.array([[0], [2.5], [1.15], [3.14]])
+    sample output: array([[127], [10], [120]])
+    """
+    #make sure all angles are in radians
+    q = q.copy()
+    
+    assert 0 <= abs(q).max() <= np.pi
+    assert q.shape == (4,1)
 
-P=np.array([[0],[0],[0],[1]])
-P_EE = np.matmul(
-    H, 
-    P
-)
-print(P_EE)
+    q = q.ravel()
+
+    H = H_all(*q,  ROBOT_CONFIG)
+
+    P=np.array([[0],[0],[0],[1]])
+    P_EE = np.matmul(
+        H, 
+        P
+    )
+    P_EE = P_EE[:-1]
+    assert P_EE.shape == (3, 1)
+    return P_EE
+
+if __name__ == '__main__':
+    #use when connected to robot
+    sp = Spad()
+    robot_config = sp.ROBOT_CONFIG
+
+    q = [0, 0, 0, 0]
+    q = np.deg2rad(q).reshape((4,1))
+        
+    sp.set_position_angle(q)
+
+    _ = forward_kinematic(q, ROBOT_CONFIG=robot_config)
+    
+    print("The result of forward kinematics is\t %s"% str(_))
